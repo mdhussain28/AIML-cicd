@@ -120,8 +120,8 @@ jobs:
         context: ./chat-api
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/chat-api:${{ steps.tag.outputs.tag }}
-          ${{ secrets.DOCKERHUB_USERNAME }}/chat-api:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/chat-api-cicd:${{ steps.tag.outputs.tag }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/chat-api-cicd:latest
         cache-from: type=gha
         cache-to:   type=gha,mode=max
 
@@ -131,8 +131,8 @@ jobs:
         context: ./risk-api
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/risk-api:${{ steps.tag.outputs.tag }}
-          ${{ secrets.DOCKERHUB_USERNAME }}/risk-api:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/risk-api-cicd:${{ steps.tag.outputs.tag }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/risk-api-cicd:latest
         cache-from: type=gha
         cache-to:   type=gha,mode=max
 
@@ -142,8 +142,8 @@ jobs:
         context: ./ui
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui:${{ steps.tag.outputs.tag }}
-          ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui-cicd:${{ steps.tag.outputs.tag }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui-cicd:latest
         cache-from: type=gha
         cache-to:   type=gha,mode=max
 
@@ -169,15 +169,15 @@ jobs:
         echo "Updating manifests with tag: $TAG"
 
         # Update chat-deployment
-        sed -i "s|${DOCKUSER}/chat-api:.*|${DOCKUSER}/chat-api:${TAG}|g" \
+        sed -i "s|${DOCKUSER}/chat-api:.*|${DOCKUSER}/chat-api-cicd:${TAG}|g" \
           k8s/chat-deployment.yaml
 
         # Update risk-deployment
-        sed -i "s|${DOCKUSER}/risk-api:.*|${DOCKUSER}/risk-api:${TAG}|g" \
+        sed -i "s|${DOCKUSER}/risk-api:.*|${DOCKUSER}/risk-api-cicd:${TAG}|g" \
           k8s/risk-deployment.yaml
 
         # Update ui-deployment
-        sed -i "s|${DOCKUSER}/bankbot-ui:.*|${DOCKUSER}/bankbot-ui:${TAG}|g" \
+        sed -i "s|${DOCKUSER}/bankbot-ui:.*|${DOCKUSER}/bankbot-ui-cicd:${TAG}|g" \
           k8s/ui-deployment.yaml
 
         echo "=== Updated images ==="
