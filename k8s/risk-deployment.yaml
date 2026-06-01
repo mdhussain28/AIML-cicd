@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: risk-api
-        image: hussain2844/risk-api-cicd:a37b7c8
+        image: hussain2844/risk-api-cicd:a4e7dad
         ports:
         - containerPort: 8001
         envFrom:
