@@ -1,60 +1,74 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chat-deployment
-  namespace: ai-production
+name: chat-deployment
+namespace: ai-production
+
 spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: chat-api
-  template:
-    metadata:
-      labels:
-        app: chat-api
-    spec:
-      containers:
-      - name: chat-api
-        image: hussain2844/chat-api-cicd:1e1629c
-        ports:
-        - containerPort: 8000
-        envFrom:
-        - configMapRef:
-            name: chat-config
-        env:
-        - name: DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: chat-secret
-              key: DB_USERNAME
-        volumeMounts:
-        - name: logs
-          mountPath: /shared/logs
-        - name: model
-          mountPath: /model
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          failureThreshold: 3
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 15
-          periodSeconds: 10
-          failureThreshold: 3
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "300m"
-            memory: "256Mi"
-      volumes:
-      - name: logs
-        emptyDir: {}
-      - name: model
-        emptyDir: {}
+replicas: 2
+
+selector:
+matchLabels:
+app: chat-api
+
+template:
+metadata:
+labels:
+app: chat-api
+
+```
+spec:
+  containers:
+  - name: chat-api
+    image: hussain2844/chat-api-cicd:1e1629c
+
+    ports:
+    - containerPort: 8000
+
+    envFrom:
+    - configMapRef:
+        name: chat-config
+
+    env:
+    - name: DB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: chat-secret
+          key: DB_USERNAME
+
+    - name: MODEL_DIR
+      value: "/data"
+
+    volumeMounts:
+    - name: bankbot-data
+      mountPath: /data
+
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 8000
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 3
+
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8000
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      failureThreshold: 3
+
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "300m"
+        memory: "256Mi"
+
+  volumes:
+  - name: bankbot-data
+    persistentVolumeClaim:
+      claimName: bankbot-data-pvc
+```
