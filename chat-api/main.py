@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
 import socket
-import shutil
 import datetime
 
 app = FastAPI()
@@ -23,31 +22,15 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-IMAGE_KNOWLEDGE = os.path.join(BASE_DIR, "knowledge.json")
-PVC_KNOWLEDGE = os.path.join(DATA_DIR, "knowledge.json")
+# Knowledge comes from image
+KNOWLEDGE_FILE = os.path.join(BASE_DIR, "knowledge.json")
+
+# Unanswered questions persist in PVC
 UNANSWERED_FILE = os.path.join(DATA_DIR, "unanswered.txt")
 
 # ------------------------------------------------------------------
-# Initialize files
+# Initialize unanswered file
 # ------------------------------------------------------------------
-
-if not os.path.exists(PVC_KNOWLEDGE):
-
-    if os.path.exists(IMAGE_KNOWLEDGE):
-
-        shutil.copy(
-            IMAGE_KNOWLEDGE,
-            PVC_KNOWLEDGE
-        )
-
-        print("Knowledge base copied to PVC")
-
-    else:
-
-        with open(PVC_KNOWLEDGE, "w") as f:
-            json.dump([], f)
-
-        print("Created empty knowledge base")
 
 if not os.path.exists(UNANSWERED_FILE):
 
@@ -66,7 +49,7 @@ if not os.path.exists(UNANSWERED_FILE):
 try:
 
     with open(
-        PVC_KNOWLEDGE,
+        KNOWLEDGE_FILE,
         "r",
         encoding="utf-8"
     ) as f:
@@ -124,7 +107,7 @@ def save_unanswered(question: str):
         print("Unable to save unanswered question:", e)
 
 # ------------------------------------------------------------------
-# Chat endpoint
+# Chat Endpoint
 # ------------------------------------------------------------------
 
 @app.get("/chat")
@@ -186,7 +169,7 @@ def chat(message: str = ""):
     }
 
 # ------------------------------------------------------------------
-# Health
+# Health Endpoint
 # ------------------------------------------------------------------
 
 @app.get("/health")
@@ -199,7 +182,7 @@ def health():
     }
 
 # ------------------------------------------------------------------
-# Knowledge Info
+# Knowledge Endpoint
 # ------------------------------------------------------------------
 
 @app.get("/knowledge")
@@ -214,7 +197,7 @@ def knowledge():
     }
 
 # ------------------------------------------------------------------
-# Unanswered Questions
+# Unanswered Questions Endpoint
 # ------------------------------------------------------------------
 
 @app.get("/unanswered")
@@ -242,7 +225,7 @@ def unanswered():
         }
 
 # ------------------------------------------------------------------
-# Config
+# Configuration Endpoint
 # ------------------------------------------------------------------
 
 @app.get("/config")
@@ -252,6 +235,7 @@ def config():
         "bot": BOT,
         "env": APP_ENV,
         "data_dir": DATA_DIR,
-        "knowledge_file": PVC_KNOWLEDGE,
-        "unanswered_file": UNANSWERED_FILE
+        "knowledge_file": KNOWLEDGE_FILE,
+        "unanswered_file": UNANSWERED_FILE,
+        "knowledge_entries": len(KNOWLEDGE)
     }
