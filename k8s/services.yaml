@@ -4,7 +4,7 @@ metadata:
   name: chat-service
   namespace: ai-production
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: chat-api
   ports:
@@ -18,7 +18,7 @@ metadata:
   name: risk-service
   namespace: ai-production
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: risk-api
   ports:
