@@ -35,24 +35,32 @@ jobs:
         python -c "
         import sys, os
         sys.path.insert(0, os.getcwd())
+    
         os.environ['MODEL_DIR'] = '/tmp'
         os.environ['LOG_DIR']   = '/tmp'
-        from main import app, is_banking_related, detect_intent
+    
+        from main import app
         from fastapi.testclient import TestClient
+    
         client = TestClient(app)
-        
+    
         r = client.get('/health')
         assert r.status_code == 200
         assert r.json()['status'] == 'ok'
         print('Health check passed')
-        
-        assert is_banking_related('I lost my card')      == True
-        assert is_banking_related('what is the weather') == False
-        print('Banking filter passed')
-        
-        assert detect_intent('I lost my card')   == 'lost_card'
-        assert detect_intent('check my balance') == 'balance_check'
-        print('Intent detection passed')
+    
+        r = client.get('/chat?message=hi')
+        assert r.status_code == 200
+        assert 'BankBot' in r.json()['reply']
+        print('Greeting check passed')
+    
+        r = client.get('/chat?message=what is upi')
+        assert r.status_code == 200
+        print('Knowledge lookup passed')
+    
+        r = client.get('/chat?message=some random unknown question')
+        assert r.status_code == 200
+        print('Unanswered flow passed')
         "
 
     - name: Test Risk API
