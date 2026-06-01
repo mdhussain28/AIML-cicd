@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: chat-api
-        image: hussain2844/chat-api-cicd:23e09be
+        image: hussain2844/chat-api-cicd:a4e3e75
         ports:
         - containerPort: 8000
         envFrom:
