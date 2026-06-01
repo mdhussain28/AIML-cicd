@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BankBot — AI Banking Assistant</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a1628;
+      color: #e0e6f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a3a6b, #0d2444);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid #2a4a8a;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+
+    .header-logo {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    .header-info h1 { font-size: 18px; font-weight: 700; color: #fff; }
+    .header-info p  { font-size: 12px; color: #7b9fd4; }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .env-badge {
+      padding: 3px 10px;
+      background: #1a3a6b;
+      border: 1px solid #2a5a9b;
+      border-radius: 20px;
+      font-size: 11px;
+      color: #7b9fd4;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 78%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.bot  { align-self: flex-start; }
+
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center;
+      justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+
+    .bot  .avatar { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+    .user .avatar { background: linear-gradient(135deg, #374151, #1f2937); }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .bot  .bubble {
+      background: #1e2d4a;
+      border: 1px solid #2a3f6b;
+      border-top-left-radius: 4px;
+    }
+
+    .user .bubble {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-top-right-radius: 4px;
+      color: #fff;
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .risk-high  { background: #7f1d1d; color: #fca5a5; }
+    .risk-low   { background: #14532d; color: #86efac; }
+    .risk-none  { background: #1e3a5f; color: #93c5fd; }
+    .risk-out   { background: #312e81; color: #c7d2fe; }
+
+    .meta {
+      font-size: 11px;
+      color: #4a6fa5;
+      margin-top: 5px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .typing {
+      display: flex; gap: 4px;
+      padding: 12px 16px;
+      background: #1e2d4a;
+      border: 1px solid #2a3f6b;
+      border-radius: 14px;
+      width: fit-content;
+    }
+
+    .typing span {
+      width: 7px; height: 7px;
+      background: #4a6fa5;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%            { transform: translateY(-6px); }
+    }
+
+    .quick-actions {
+      padding: 10px 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-top: 1px solid #1a2a4a;
+      background: #0d1a2e;
+    }
+
+    .quick-btn {
+      padding: 6px 14px;
+      background: #1a2d4a;
+      border: 1px solid #2a4a7a;
+      border-radius: 20px;
+      color: #7b9fd4;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+
+    .input-area {
+      padding: 14px 20px;
+      background: #0d1f3c;
+      border-top: 1px solid #1a2a4a;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #1a2d4a;
+      border: 1px solid #2a4a7a;
+      border-radius: 12px;
+      color: #e0e6f0;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-area input:focus      { border-color: #2563eb; }
+    .input-area input::placeholder { color: #3a5a8a; }
+
+    .send-btn {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: transform 0.2s, opacity 0.2s;
+      color: white;
+    }
+
+    .send-btn:hover    { transform: scale(1.05); }
+    .send-btn:active   { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .welcome-card {
+      background: linear-gradient(135deg, #1a2d4a, #0f1e35);
+      border: 1px solid #2a4a7a;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      margin: 10px auto;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .welcome-card h2 { color: #fff; margin-bottom: 8px; font-size: 20px; }
+    .welcome-card p  { color: #7b9fd4; font-size: 13px; line-height: 1.6; }
+
+    .welcome-features {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .feature {
+      background: #0f1e35;
+      border: 1px solid #2a3f6b;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #7b9fd4;
+    }
+
+    ::-webkit-scrollbar       { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a4a7a; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">🏦</div>
+    <div class="header-info">
+      <h1>BankBot</h1>
+      <p>AI-Powered Banking Assistant</p>
+    </div>
+    <div class="header-right">
+      <span class="env-badge" id="envBadge">connecting...</span>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+  </div>
+
+  <div class="chat-container" id="chatContainer">
+    <div class="welcome-card">
+      <h2>👋 Welcome to BankBot</h2>
+      <p>I'm your AI-powered banking assistant running on Kubernetes. Ask me about your accounts, cards, loans, fraud alerts, and more.</p>
+      <div class="welcome-features">
+        <span class="feature">🤖 LLM Powered</span>
+        <span class="feature">🔒 Risk Analysis</span>
+        <span class="feature">🧠 Memory</span>
+        <span class="feature">☸️ Kubernetes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <button class="quick-btn" onclick="sendQuick('I lost my debit card')">💳 Lost Card</button>
+    <button class="quick-btn" onclick="sendQuick('What is my account balance')">💰 Check Balance</button>
+    <button class="quick-btn" onclick="sendQuick('I noticed a fraudulent transaction')">🚨 Report Fraud</button>
+    <button class="quick-btn" onclick="sendQuick('I need information about a home loan')">🏠 Loan Info</button>
+    <button class="quick-btn" onclick="sendQuick('I want my account statement')">📄 Statement</button>
+    <button class="quick-btn" onclick="sendQuick('My account is blocked')">🔒 Unblock Account</button>
+  </div>
+
+  <div class="input-area">
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="Ask me about your account, cards, loans..."
+      onkeydown="if(event.key==='Enter') sendMessage()"
+    />
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+
+  <script>
+    const API_URL = window.CHAT_API_URL || 'http://192.168.100.11:30080';
+
+    function getRiskClass(flag) {
+      if (flag === 'high_risk') return 'risk-high';
+      if (flag === 'low_risk')  return 'risk-low';
+      if (flag === 'none')      return 'risk-out';
+      return 'risk-none';
+    }
+
+    function getRiskLabel(flag) {
+      if (flag === 'high_risk') return '🔴 High Risk';
+      if (flag === 'low_risk')  return '🟢 Low Risk';
+      if (flag === 'none')      return '⚪ Out of Scope';
+      return '⚪ Unknown';
+    }
+
+    function addMessage(role, content, meta = null) {
+      const container = document.getElementById('chatContainer');
+      const div       = document.createElement('div');
+      div.className   = `message ${role}`;
+
+      const avatar   = role === 'bot' ? '🏦' : '👤';
+      let badgeHtml  = '';
+      let metaHtml   = '';
+
+      if (meta && role === 'bot') {
+        const riskClass = getRiskClass(meta.risk_flag);
+        const riskLabel = getRiskLabel(meta.risk_flag);
+        badgeHtml = `<div style="margin-top:6px">
+          <span class="risk-badge ${riskClass}">${riskLabel}</span>
+        </div>`;
+        metaHtml = `<div class="meta">
+          <span>🎯 ${(meta.intent || '').replace(/_/g,' ')}</span>
+          <span>📊 ${meta.risk_score ?? 'N/A'}</span>
+          ${meta.llm_used ? '<span>🤖 LLM</span>' : '<span>⚙️ Rule</span>'}
+          <span>🏷️ ${meta.model_version ?? 'N/A'}</span>
+          <span>🖥️ ${meta.served_by ?? ''}</span>
+        </div>`;
+      }
+
+      div.innerHTML = `
+        <div class="avatar">${avatar}</div>
+        <div>
+          <div class="bubble">${content}${badgeHtml}</div>
+          ${metaHtml}
+        </div>`;
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addTyping() {
+      const container = document.getElementById('chatContainer');
+      const div       = document.createElement('div');
+      div.className   = 'message bot';
+      div.id          = 'typing';
+      div.innerHTML   = `
+        <div class="avatar">🏦</div>
+        <div class="typing">
+          <span></span><span></span><span></span>
+        </div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTyping() {
+      const t = document.getElementById('typing');
+      if (t) t.remove();
+    }
+
+    async function sendMessage() {
+      const input   = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const message = input.value.trim();
+      if (!message) return;
+
+      addMessage('user', message);
+      input.value      = '';
+      sendBtn.disabled = true;
+      addTyping();
+
+      try {
+        const res  = await fetch(
+          `${API_URL}/chat?message=${encodeURIComponent(message)}`
+        );
+        const data = await res.json();
+        removeTyping();
+        addMessage('bot', data.reply, data);
+      } catch (err) {
+        removeTyping();
+        addMessage('bot', '⚠️ Unable to reach BankBot. Please check the connection.');
+      }
+
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    function sendQuick(message) {
+      document.getElementById('messageInput').value = message;
+      sendMessage();
+    }
+
+    async function checkHealth() {
+      try {
+        const res  = await fetch(`${API_URL}/health`);
+        const data = await res.json();
+        document.getElementById('statusDot').style.background = '#22c55e';
+        document.getElementById('statusDot').style.boxShadow  = '0 0 6px #22c55e';
+        document.getElementById('envBadge').textContent = data.env || 'online';
+      } catch {
+        document.getElementById('statusDot').style.background = '#ef4444';
+        document.getElementById('statusDot').style.boxShadow  = '0 0 6px #ef4444';
+        document.getElementById('envBadge').textContent = 'offline';
+      }
+    }
+
+    checkHealth();
+    setInterval(checkHealth, 30000);
+  </script>
+</body>
+</html>
