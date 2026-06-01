@@ -30,10 +30,11 @@ jobs:
         pip install fastapi uvicorn requests httpx pytest
 
     - name: Test Chat API
+      working-directory: ./chat-api
       run: |
-        cd chat-api
         python -c "
-        import os
+        import sys, os
+        sys.path.insert(0, '.')
         os.environ['MODEL_DIR'] = '/tmp'
         os.environ['LOG_DIR']   = '/tmp'
         from main import app, is_banking_related, detect_intent
@@ -59,10 +60,11 @@ jobs:
         "
 
     - name: Test Risk API
+      working-directory: ./risk-api
       run: |
-        cd risk-api
         python -c "
-        import os
+        import sys, os
+        sys.path.insert(0, '.')
         os.environ['MODEL_DIR'] = '/tmp'
         os.environ['LOG_DIR']   = '/tmp'
         from risk import app
