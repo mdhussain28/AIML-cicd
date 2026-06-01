@@ -1,0 +1,211 @@
+name: BankBot CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+
+  # ─── 1. Test ────────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        pip install fastapi uvicorn requests httpx pytest
+
+    - name: Test Chat API
+      run: |
+        cd chat-api
+        python -c "
+        import os
+        os.environ['MODEL_DIR'] = '/tmp'
+        os.environ['LOG_DIR']   = '/tmp'
+        from main import app, is_banking_related, detect_intent
+        from fastapi.testclient import TestClient
+        client = TestClient(app)
+
+        # Health check
+        r = client.get('/health')
+        assert r.status_code == 200
+        assert r.json()['status'] == 'ok'
+        print('Health check passed')
+
+        # Banking filter
+        assert is_banking_related('I lost my card')      == True
+        assert is_banking_related('what is the weather') == False
+        print('Banking filter passed')
+
+        # Intent detection
+        assert detect_intent('I lost my card')    == 'lost_card'
+        assert detect_intent('check my balance')  == 'balance_check'
+        assert detect_intent('fraud on account')  == 'fraud_alert'
+        print('Intent detection passed')
+        "
+
+    - name: Test Risk API
+      run: |
+        cd risk-api
+        python -c "
+        import os
+        os.environ['MODEL_DIR'] = '/tmp'
+        os.environ['LOG_DIR']   = '/tmp'
+        from risk import app
+        from fastapi.testclient import TestClient
+        client = TestClient(app)
+
+        # Health check
+        r = client.get('/health')
+        assert r.status_code == 200
+        print('Risk API health passed')
+
+        # Risk scoring
+        r = client.get('/risk?message=I+lost+my+card')
+        assert r.status_code == 200
+        data = r.json()
+        assert 'risk_score' in data
+        assert 'flag' in data
+        print(f'Risk scoring passed: score={data[\"risk_score\"]} flag={data[\"flag\"]}')
+        "
+
+  # ─── 2. Build and Push ──────────────────────────────────────────────────────
+  build-and-push:
+    name: Build and Push to DockerHub
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Generate image tag
+      id: tag
+      run: |
+        TAG="${{ github.sha }}"
+        SHORT_TAG="${TAG:0:7}"
+        echo "tag=$SHORT_TAG" >> $GITHUB_OUTPUT
+        echo "Image tag: $SHORT_TAG"
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push Chat API
+      uses: docker/build-push-action@v5
+      with:
+        context: ./chat-api
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/chat-api:${{ steps.tag.outputs.tag }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/chat-api:latest
+        cache-from: type=gha
+        cache-to:   type=gha,mode=max
+
+    - name: Build and push Risk API
+      uses: docker/build-push-action@v5
+      with:
+        context: ./risk-api
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/risk-api:${{ steps.tag.outputs.tag }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/risk-api:latest
+        cache-from: type=gha
+        cache-to:   type=gha,mode=max
+
+    - name: Build and push UI
+      uses: docker/build-push-action@v5
+      with:
+        context: ./ui
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui:${{ steps.tag.outputs.tag }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui:latest
+        cache-from: type=gha
+        cache-to:   type=gha,mode=max
+
+  # ─── 3. Update Manifests ────────────────────────────────────────────────────
+  update-manifests:
+    name: Update K8s Manifests
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update image tags
+      run: |
+        TAG=${{ needs.build-and-push.outputs.image_tag }}
+        DOCKUSER=${{ secrets.DOCKERHUB_USERNAME }}
+
+        echo "Updating manifests with tag: $TAG"
+
+        # Update chat-deployment
+        sed -i "s|${DOCKUSER}/chat-api:.*|${DOCKUSER}/chat-api:${TAG}|g" \
+          k8s/chat-deployment.yaml
+
+        # Update risk-deployment
+        sed -i "s|${DOCKUSER}/risk-api:.*|${DOCKUSER}/risk-api:${TAG}|g" \
+          k8s/risk-deployment.yaml
+
+        # Update ui-deployment
+        sed -i "s|${DOCKUSER}/bankbot-ui:.*|${DOCKUSER}/bankbot-ui:${TAG}|g" \
+          k8s/ui-deployment.yaml
+
+        echo "=== Updated images ==="
+        grep "image:" k8s/chat-deployment.yaml
+        grep "image:" k8s/risk-deployment.yaml
+        grep "image:" k8s/ui-deployment.yaml
+
+    - name: Commit and push updated manifests
+      run: |
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add k8s/chat-deployment.yaml \
+                k8s/risk-deployment.yaml \
+                k8s/ui-deployment.yaml
+
+        git commit -m "ci: update images to ${{ needs.build-and-push.outputs.image_tag }} [skip ci]"
+        git push
+
+    - name: Summary
+      run: |
+        echo "========================================"
+        echo "CI/CD Pipeline Complete"
+        echo "========================================"
+        echo "Tag:      ${{ needs.build-and-push.outputs.image_tag }}"
+        echo "Images pushed to DockerHub:"
+        echo "  ${{ secrets.DOCKERHUB_USERNAME }}/chat-api:${{ needs.build-and-push.outputs.image_tag }}"
+        echo "  ${{ secrets.DOCKERHUB_USERNAME }}/risk-api:${{ needs.build-and-push.outputs.image_tag }}"
+        echo "  ${{ secrets.DOCKERHUB_USERNAME }}/bankbot-ui:${{ needs.build-and-push.outputs.image_tag }}"
+        echo "Manifests updated in k8s/ — ArgoCD will auto-sync"
+        echo "========================================"
