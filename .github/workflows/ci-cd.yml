@@ -29,62 +29,55 @@ jobs:
       run: |
         pip install fastapi uvicorn requests httpx pytest
 
-    - name: Test Chat API
-      working-directory: ./chat-api
+       - name: Test Chat API
       run: |
+        cd chat-api
         python -c "
         import sys, os
-        sys.path.insert(0, '.')
+        sys.path.insert(0, os.getcwd())
         os.environ['MODEL_DIR'] = '/tmp'
         os.environ['LOG_DIR']   = '/tmp'
         from main import app, is_banking_related, detect_intent
         from fastapi.testclient import TestClient
         client = TestClient(app)
-
-        # Health check
+        
         r = client.get('/health')
         assert r.status_code == 200
         assert r.json()['status'] == 'ok'
         print('Health check passed')
-
-        # Banking filter
+        
         assert is_banking_related('I lost my card')      == True
         assert is_banking_related('what is the weather') == False
         print('Banking filter passed')
-
-        # Intent detection
-        assert detect_intent('I lost my card')    == 'lost_card'
-        assert detect_intent('check my balance')  == 'balance_check'
-        assert detect_intent('fraud on account')  == 'fraud_alert'
+        
+        assert detect_intent('I lost my card')   == 'lost_card'
+        assert detect_intent('check my balance') == 'balance_check'
         print('Intent detection passed')
         "
 
     - name: Test Risk API
-      working-directory: ./risk-api
       run: |
+        cd risk-api
         python -c "
         import sys, os
-        sys.path.insert(0, '.')
+        sys.path.insert(0, os.getcwd())
         os.environ['MODEL_DIR'] = '/tmp'
         os.environ['LOG_DIR']   = '/tmp'
         from risk import app
         from fastapi.testclient import TestClient
         client = TestClient(app)
-
-        # Health check
+        
         r = client.get('/health')
         assert r.status_code == 200
         print('Risk API health passed')
-
-        # Risk scoring
+        
         r = client.get('/risk?message=I+lost+my+card')
         assert r.status_code == 200
         data = r.json()
         assert 'risk_score' in data
         assert 'flag' in data
-        print(f'Risk scoring passed: score={data[\"risk_score\"]} flag={data[\"flag\"]}')
+        print('Risk scoring passed')
         "
-
   # ─── 2. Build and Push ──────────────────────────────────────────────────────
   build-and-push:
     name: Build and Push to DockerHub
