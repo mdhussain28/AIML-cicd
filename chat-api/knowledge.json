@@ -1,0 +1,117 @@
+[
+  {
+    "category": "lost_card",
+    "keywords": ["lost card","debit card lost","credit card lost","card missing","lost my card"],
+    "answer": "Your card can be blocked immediately through mobile banking, internet banking, ATM services, or customer support."
+  },
+  {
+    "category": "fraud",
+    "keywords": ["fraud","fraudulent transaction","unauthorized transaction","suspicious transaction","fraud alert"],
+    "answer": "Please report the transaction immediately. We recommend blocking the affected card and contacting our fraud team."
+  },
+  {
+    "category": "balance",
+    "keywords": ["balance","account balance","check balance","available balance"],
+    "answer": "You can check your account balance through mobile banking, internet banking, ATM, or passbook."
+  },
+  {
+    "category": "statement",
+    "keywords": ["statement","account statement","bank statement","mini statement"],
+    "answer": "Account statements can be downloaded from internet banking or mobile banking."
+  },
+  {
+    "category": "blocked_account",
+    "keywords": ["account blocked","blocked account","locked account","account locked"],
+    "answer": "Please contact customer support or visit the nearest branch for account verification and reactivation."
+  },
+  {
+    "category": "pin_reset",
+    "keywords": ["pin reset","reset pin","forgot pin","atm pin"],
+    "answer": "ATM PIN can be reset through internet banking, mobile banking, or supported ATMs."
+  },
+  {
+    "category": "atm_issue",
+    "keywords": ["atm issue","atm problem","cash not dispensed","atm error"],
+    "answer": "Please report the ATM location, date, and time so our support team can investigate."
+  },
+  {
+    "category": "debit_card",
+    "keywords": ["debit card"],
+    "answer": "Debit cards allow direct access to funds from your bank account."
+  },
+  {
+    "category": "credit_card",
+    "keywords": ["credit card"],
+    "answer": "Credit cards provide a credit limit that can be repaid monthly."
+  },
+  {
+    "category": "upi",
+    "keywords": ["upi","what is upi"],
+    "answer": "UPI enables instant bank-to-bank transfers using mobile devices."
+  },
+  {
+    "category": "neft",
+    "keywords": ["neft"],
+    "answer": "NEFT is a nationwide electronic funds transfer system."
+  },
+  {
+    "category": "rtgs",
+    "keywords": ["rtgs"],
+    "answer": "RTGS enables real-time high-value fund transfers."
+  },
+  {
+    "category": "imps",
+    "keywords": ["imps"],
+    "answer": "IMPS provides instant 24x7 interbank fund transfers."
+  },
+  {
+    "category": "fixed_deposit",
+    "keywords": ["fixed deposit","fd"],
+    "answer": "Fixed Deposits provide guaranteed returns for a fixed tenure."
+  },
+  {
+    "category": "savings_account",
+    "keywords": ["savings account"],
+    "answer": "Savings accounts help customers save money while earning interest."
+  },
+  {
+    "category": "current_account",
+    "keywords": ["current account"],
+    "answer": "Current accounts are designed for businesses and high transaction volumes."
+  },
+  {
+    "category": "home_loan",
+    "keywords": ["home loan","mortgage","housing loan"],
+    "answer": "Home loans are available with flexible repayment options and competitive interest rates."
+  },
+  {
+    "category": "personal_loan",
+    "keywords": ["personal loan"],
+    "answer": "Personal loans can be used for various personal expenses subject to eligibility."
+  },
+  {
+    "category": "education_loan",
+    "keywords": ["education loan","student loan"],
+    "answer": "Education loans help finance tuition fees and educational expenses."
+  },
+  {
+    "category": "interest_rate",
+    "keywords": ["interest rate","loan rate","fd rate"],
+    "answer": "Current interest rates vary by product and tenure. Please contact customer support for the latest rates."
+  },
+  {
+    "category": "cheque_book",
+    "keywords": ["cheque book","check book"],
+    "answer": "Cheque books can be requested through internet banking, mobile banking, or branch visits."
+  },
+  {
+    "category": "branch_locator",
+    "keywords": ["branch","nearest branch","branch locator"],
+    "answer": "You can locate your nearest branch using the bank website or mobile app."
+  },
+  {
+    "category": "customer_support",
+    "keywords": ["customer care","support","help desk"],
+    "answer": "Customer support is available through phone, branch, internet banking, and mobile banking channels."
+  }
+]
