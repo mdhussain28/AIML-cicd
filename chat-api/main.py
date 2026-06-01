@@ -21,39 +21,111 @@ DATA_DIR = os.getenv("MODEL_DIR", "/data")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 
-IMAGE_KNOWLEDGE = "/app/knowledge.json"
-PVC_KNOWLEDGE = f"{DATA_DIR}/knowledge.json"
-UNANSWERED_FILE = f"{DATA_DIR}/unanswered.txt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+IMAGE_KNOWLEDGE = os.path.join(BASE_DIR, "knowledge.json")
+PVC_KNOWLEDGE = os.path.join(DATA_DIR, "knowledge.json")
+UNANSWERED_FILE = os.path.join(DATA_DIR, "unanswered.txt")
+
+# ------------------------------------------------------------------
+# Initialize files
+# ------------------------------------------------------------------
 
 if not os.path.exists(PVC_KNOWLEDGE):
-    shutil.copy(IMAGE_KNOWLEDGE, PVC_KNOWLEDGE)
-    print("Created knowledge base from image")
+
+    if os.path.exists(IMAGE_KNOWLEDGE):
+
+        shutil.copy(
+            IMAGE_KNOWLEDGE,
+            PVC_KNOWLEDGE
+        )
+
+        print("Knowledge base copied to PVC")
+
+    else:
+
+        with open(PVC_KNOWLEDGE, "w") as f:
+            json.dump([], f)
+
+        print("Created empty knowledge base")
 
 if not os.path.exists(UNANSWERED_FILE):
-    open(UNANSWERED_FILE, "w").close()
+
+    open(
+        UNANSWERED_FILE,
+        "w",
+        encoding="utf-8"
+    ).close()
+
     print("Created unanswered file")
 
-with open(PVC_KNOWLEDGE, "r", encoding="utf-8") as f:
-    KNOWLEDGE = json.load(f)
+# ------------------------------------------------------------------
+# Load knowledge base
+# ------------------------------------------------------------------
 
+try:
+
+    with open(
+        PVC_KNOWLEDGE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        KNOWLEDGE = json.load(f)
+
+    print(f"Loaded {len(KNOWLEDGE)} knowledge entries")
+
+except Exception as e:
+
+    print("Knowledge load error:", e)
+
+    KNOWLEDGE = []
+
+# ------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------
 
 def find_answer(question: str):
-    question = question.lower()
+
+    question = question.lower().strip()
 
     for item in KNOWLEDGE:
-        for keyword in item["keywords"]:
+
+        keywords = item.get("keywords", [])
+
+        for keyword in keywords:
+
             if keyword.lower() in question:
-                return item
+
+                return {
+                    "category": item.get("category", "general"),
+                    "answer": item.get("answer", "")
+                }
 
     return None
 
 
 def save_unanswered(question: str):
-    with open(UNANSWERED_FILE, "a", encoding="utf-8") as f:
-        f.write(
-            f"{datetime.datetime.now()} | {question}\n"
-        )
 
+    try:
+
+        with open(
+            UNANSWERED_FILE,
+            "a",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(
+                f"{datetime.datetime.now()} | {question}\n"
+            )
+
+    except Exception as e:
+
+        print("Unable to save unanswered question:", e)
+
+# ------------------------------------------------------------------
+# Chat endpoint
+# ------------------------------------------------------------------
 
 @app.get("/chat")
 def chat(message: str = ""):
@@ -70,10 +142,16 @@ def chat(message: str = ""):
     ]
 
     if msg in greetings:
+
         return {
             "bot": BOT,
-            "reply": "I'm BankBot, specialized in banking support only. Please ask me about your accounts, cards, loans, or transactions.",
+            "reply": (
+                "I'm BankBot, specialized in banking support only. "
+                "Please ask me about your accounts, cards, loans, or transactions."
+            ),
             "intent": "greeting",
+            "risk_score": "N/A",
+            "risk_flag": "N/A",
             "served_by": socket.gethostname(),
             "llm_used": False
         }
@@ -81,10 +159,13 @@ def chat(message: str = ""):
     result = find_answer(msg)
 
     if result:
+
         return {
             "bot": BOT,
             "reply": result["answer"],
             "intent": result["category"],
+            "risk_score": "N/A",
+            "risk_flag": "N/A",
             "served_by": socket.gethostname(),
             "llm_used": False
         }
@@ -93,35 +174,60 @@ def chat(message: str = ""):
 
     return {
         "bot": BOT,
-        "reply": "This question has been noted and saved. Our team will contact you shortly.",
+        "reply": (
+            "This question has been noted and saved. "
+            "Our team will contact you shortly."
+        ),
         "intent": "unanswered",
+        "risk_score": "N/A",
+        "risk_flag": "N/A",
         "served_by": socket.gethostname(),
         "llm_used": False
     }
 
+# ------------------------------------------------------------------
+# Health
+# ------------------------------------------------------------------
 
 @app.get("/health")
 def health():
+
     return {
         "status": "ok",
         "bot": BOT,
         "env": APP_ENV
     }
 
+# ------------------------------------------------------------------
+# Knowledge Info
+# ------------------------------------------------------------------
 
 @app.get("/knowledge")
 def knowledge():
+
     return {
         "entries": len(KNOWLEDGE),
-        "categories": [x["category"] for x in KNOWLEDGE]
+        "categories": [
+            item.get("category")
+            for item in KNOWLEDGE
+        ]
     }
 
+# ------------------------------------------------------------------
+# Unanswered Questions
+# ------------------------------------------------------------------
 
 @app.get("/unanswered")
 def unanswered():
 
     try:
-        with open(UNANSWERED_FILE, "r") as f:
+
+        with open(
+            UNANSWERED_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
             questions = f.readlines()
 
         return {
@@ -130,13 +236,18 @@ def unanswered():
         }
 
     except Exception as e:
+
         return {
             "error": str(e)
         }
 
+# ------------------------------------------------------------------
+# Config
+# ------------------------------------------------------------------
 
 @app.get("/config")
 def config():
+
     return {
         "bot": BOT,
         "env": APP_ENV,
