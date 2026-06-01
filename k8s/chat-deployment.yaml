@@ -20,7 +20,7 @@ app: chat-api
 spec:
   containers:
   - name: chat-api
-    image: hussain2844/chat-api-cicd:1e1629c
+    image: hussain2844/chat-api-cicd:5455c61
 
     ports:
     - containerPort: 8000
