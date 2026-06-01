@@ -17,7 +17,7 @@ BOT          = os.getenv("BOT_NAME",       "BankBot")
 APP_ENV      = os.getenv("APP_ENV",        "dev")
 LOG_DIR      = os.getenv("LOG_DIR",        "/shared/logs")
 MODEL_DIR    = os.getenv("MODEL_DIR",      "/model")
-OLLAMA_URL   = os.getenv("OLLAMA_URL",     "http://ollama-service:11434")
+OLLAMA_URL   = os.getenv("OLLAMA_URL",     "http://ollama.default.svc.cluster.local:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL",   "llama3.2")
 
 # Load memory from volume on startup
