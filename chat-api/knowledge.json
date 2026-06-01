@@ -114,4 +114,9 @@
     "keywords": ["customer care","support","help desk"],
     "answer": "Customer support is available through phone, branch, internet banking, and mobile banking channels."
   }
+  {
+    "category": "Account Blocked",
+    "keywords": ["blocked"],
+    "answer": "Please visit our nearest branch to unblock your account"
+  }
 ]
